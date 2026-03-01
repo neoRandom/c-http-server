@@ -5,11 +5,19 @@
 #include <Windows.h>
 #include <stdlib.h>
 
+/* Socket abstraction (Port) */
+typedef struct SocketOperations {
+    SOCKET (*create)(int af, int type, int protocol);
+    int (*bind)(SOCKET s, const struct sockaddr *name, int namelen);
+    int (*listen)(SOCKET s, int backlog);
+} SocketOperations;
+
 typedef struct HTTP_Server {
-	SOCKET socket;
-	struct sockaddr_in addr;
+    SOCKET socket;
+    struct sockaddr_in addr;
 } HTTP_Server;
 
-HTTP_Server * init_server(u_short port);
+/* Dependency Injection: pass operations */
+HTTP_Server* init_server(u_short port, const SocketOperations *ops);
 
 #endif // HTTP_SERVER_H

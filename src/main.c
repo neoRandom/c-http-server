@@ -1,11 +1,12 @@
-#include <winsock2.h>
-#include <Windows.h>
 #include <stdio.h>
 #include "http_server.h"
 
+/* external adapter */
+extern SocketOperations WinsockOps;
+
 int main()
 {
-	HTTP_Server * server = init_server(8080);
+    HTTP_Server* server = init_server(8080, &WinsockOps);
 
     while (1) {
         SOCKET client = accept(server->socket, 0, 0);
@@ -13,7 +14,6 @@ int main()
         char request[512] = {0};
         recv(client, request, 512, 0);
 
-        // GET index
         if (memcmp(request, "GET / ", 6) == 0) {
             FILE* f = fopen("static/index.html", "r");
 
@@ -24,7 +24,6 @@ int main()
             fclose(f);
         }
 
-        // GET (close the server)
         if (memcmp(request, "GET /close-the-server ", 22) == 0) {
             send(client, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n", 43, 0);
             closesocket(client);
@@ -33,7 +32,6 @@ int main()
 
         closesocket(client);
     }
-	
 
     free(server);
 }
