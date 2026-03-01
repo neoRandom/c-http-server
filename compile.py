@@ -18,7 +18,7 @@ class CompilationStrategy(ABC):
 # 2. Concrete Implementation for Windows
 class WindowsStrategy(CompilationStrategy):
     def get_libraries(self) -> List[str]:
-        return ["-lwsock32"]
+        return ["-lwsock32", "-lws2_32"]
 
     def get_output_name(self) -> str:
         return "server.exe"

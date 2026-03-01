@@ -1,23 +1,33 @@
 #ifndef HTTP_SERVER_H
 #define HTTP_SERVER_H
 
-#include <winsock2.h>
-#include <Windows.h>
+#include <stdint.h>
 #include <stdlib.h>
 
-/* Socket abstraction (Port) */
-typedef struct SocketOperations {
-    SOCKET (*create)(int af, int type, int protocol);
-    int (*bind)(SOCKET s, const struct sockaddr *name, int namelen);
-    int (*listen)(SOCKET s, int backlog);
+typedef intptr_t socket_handle;
+
+typedef struct SocketOperations 
+{
+    int (*startup)(void);
+    void (*cleanup)(void);
+
+    socket_handle (*socket_create)(void);
+    int (*socket_bind)(socket_handle, uint16_t port);
+    int (*socket_listen)(socket_handle, int backlog);
+
+    socket_handle (*socket_accept)(socket_handle);
+    int (*socket_recv)(socket_handle, void *buffer, size_t length);
+    int (*socket_send)(socket_handle, const void *buffer, size_t length);
+    int (*socket_close)(socket_handle);
 } SocketOperations;
 
-typedef struct HTTP_Server {
-    SOCKET socket;
-    struct sockaddr_in addr;
+typedef struct HTTP_Server 
+{
+    socket_handle socket;
+    uint16_t port;
+    const SocketOperations *ops;
 } HTTP_Server;
 
-/* Dependency Injection: pass operations */
-HTTP_Server* init_server(u_short port, const SocketOperations *ops);
+HTTP_Server* init_server(uint16_t port, const SocketOperations *ops);
 
 #endif // HTTP_SERVER_H

@@ -1,27 +1,32 @@
 #include "http_server.h"
 
-HTTP_Server* init_server(u_short port, const SocketOperations *ops {
-    WSADATA wsadata;
-	WSAStartup(MAKEWORD(2, 2), &wsadata);
+HTTP_Server * init_server(uint16_t port, const SocketOperations *ops) 
+{
+    if (!ops) { return NULL; }
 
-	if (!ops) return NULL;
+    if (ops->startup && ops->startup() != 0) {
+        return NULL;
+	}
 
-    HTTP_Server* http_server = (HTTP_Server*) malloc(sizeof(HTTP_Server));
-	if (!http_server) return NULL;
-	
-	http_server->socket = ops->socket(AF_INET, SOCK_STREAM, 0);
+    HTTP_Server *server = malloc(sizeof(HTTP_Server));
+    if (!server) {
+        return NULL;
+	}
 
-	http_server->addr.sin_family = AF_INET;
-	http_server->addr.sin_addr.s_addr = 0;
-	http_server->addr.sin_port = htons(port);
+    server->ops = ops;
+    server->port = port;
 
-	ops->bind(
-		http_server->socket, 
-		(SOCKADDR*) &http_server->addr, 
-		sizeof(http_server->addr)
-	);
+    server->socket = ops->socket_create();
+    if (server->socket == 0) {
+        return NULL;
+	}
 
-	ops->listen(http_server->socket, 10);
+    if (ops->socket_bind(server->socket, port) != 0) {
+        return NULL;
+	}
+    if (ops->socket_listen(server->socket, 10) != 0) {
+        return NULL;
+	}
 
-    return http_server;
+    return server;
 }
