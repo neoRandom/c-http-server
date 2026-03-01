@@ -30,7 +30,7 @@ class LinuxStrategy(CompilationStrategy):
         return ["-lpthread"]
 
     def get_output_name(self) -> str:
-        return "server"
+        return "server.out"
 
 # 4. The Orchestrator (Uses the contract, not concrete values)
 class ProjectBuilder:
