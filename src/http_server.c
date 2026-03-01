@@ -1,5 +1,12 @@
 #include "http_server.h"
 
+struct HTTP_Server 
+{
+    socket_handle socket;
+    uint16_t port;
+    const SocketOperations *ops;
+};
+
 HTTP_Server * init_server(uint16_t port, const SocketOperations *ops) 
 {
     if (!ops) { return NULL; }
@@ -29,4 +36,14 @@ HTTP_Server * init_server(uint16_t port, const SocketOperations *ops)
 	}
 
     return server;
+}
+
+socket_handle http_server_get_socket(HTTP_Server *server)
+{
+    return server ? server->socket : 0;
+}
+
+const SocketOperations* http_server_get_ops(HTTP_Server *server)
+{
+    return server ? server->ops : NULL;
 }
