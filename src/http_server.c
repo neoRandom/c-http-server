@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define BUFFER_SIZE 1024
+
 struct HTTP_Server 
 {
     socket_handle socket;
@@ -9,6 +11,9 @@ struct HTTP_Server
     const SocketOperations *ops;
     int running;
 };
+
+const char* INDEX_PAGE_PATH = "static/index.html";
+const char* STOP_PAGE_PATH = "static/stop.html";
 
 HTTP_Server * init_server(uint16_t port, const SocketOperations *ops) 
 {
@@ -54,33 +59,37 @@ void http_server_run(HTTP_Server *server)
         if (client == 0)
             continue;
 
-        char request[512] = {0};
+        char request[BUFFER_SIZE] = {0};
         ops->socket_recv(client, request, sizeof(request));
 
         if (memcmp(request, "GET / ", 6) == 0)
         {
-            FILE* f = fopen("static/index.html", "r");
+            FILE* f = fopen(INDEX_PAGE_PATH, "r");
 
             if (f)
             {
-                char buffer[1024] = {0};
-                fread(buffer, 1, 1024, f);
-                ops->socket_send(client, buffer, 1024);
+                char buffer[BUFFER_SIZE] = {0};
+                fread(buffer, 1, BUFFER_SIZE, f);
+                ops->socket_send(client, buffer, BUFFER_SIZE);
+                ops->socket_close(client);
                 fclose(f);
             }
         }
 
-        if (memcmp(request, "GET /quit ", 22) == 0)
+        if (memcmp(request, "GET /stop ", 10) == 0)
         {
-            const char* msg =
-                "HTTP/1.0 200 OK\r\n"
-                "Content-Type: text/html\r\n";
+            FILE* f = fopen(STOP_PAGE_PATH, "r");
 
-            ops->socket_send(client, msg, strlen(msg));
-            ops->socket_close(client);
+            if (f)
+            {
+                char buffer[BUFFER_SIZE] = {0};
+                fread(buffer, 1, BUFFER_SIZE, f);
+                ops->socket_send(client, buffer, BUFFER_SIZE);
+                ops->socket_close(client);
+                fclose(f);
+            }
 
             http_server_stop(server);
-            continue;
         }
 
         ops->socket_close(client);
@@ -88,6 +97,7 @@ void http_server_run(HTTP_Server *server)
 
     if (server->socket) {
         ops->socket_close(server->socket);
+        server->socket = 0;
     }
 
     ops->cleanup();
@@ -100,8 +110,7 @@ void http_server_stop(HTTP_Server *server)
 
     server->running = 0;
 
-    if (server->ops && server->socket)
-    {
+    if (server->ops && server->socket) {
         server->ops->socket_close(server->socket);
         server->socket = 0;
     }
