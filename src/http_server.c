@@ -1,4 +1,6 @@
 #include "http_server.h"
+#include <stdio.h>
+#include <string.h>
 
 struct HTTP_Server 
 {
@@ -38,12 +40,48 @@ HTTP_Server * init_server(uint16_t port, const SocketOperations *ops)
     return server;
 }
 
-socket_handle http_server_get_socket(HTTP_Server *server)
+void http_server_run(HTTP_Server *server)
 {
-    return server ? server->socket : 0;
-}
+    if (!server) return;
 
-const SocketOperations* http_server_get_ops(HTTP_Server *server)
-{
-    return server ? server->ops : NULL;
+    const SocketOperations *ops = server->ops;
+
+    while (1)
+    {
+        socket_handle client = ops->socket_accept(server->socket);
+        if (client == 0)
+            continue;
+
+        char request[512] = {0};
+        ops->socket_recv(client, request, sizeof(request));
+
+        if (memcmp(request, "GET / ", 6) == 0)
+        {
+            FILE* f = fopen("static/index.html", "r");
+
+            if (f)
+            {
+                char buffer[1024] = {0};
+                fread(buffer, 1, 1024, f);
+                ops->socket_send(client, buffer, 1024);
+                fclose(f);
+            }
+        }
+
+        if (memcmp(request, "GET /quit ", 22) == 0)
+        {
+            const char* msg =
+                "HTTP/1.0 200 OK\r\n"
+                "Content-Type: text/html\r\n";
+
+            ops->socket_send(client, msg, strlen(msg));
+            ops->socket_close(client);
+            break;
+        }
+
+        ops->socket_close(client);
+    }
+
+    ops->cleanup();
+    free(server);
 }

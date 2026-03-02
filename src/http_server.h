@@ -21,20 +21,9 @@ typedef struct SocketOperations
     int (*socket_close)(socket_handle);
 } SocketOperations;
 
-// typedef struct HTTP_Server 
-// {
-//     socket_handle socket;
-//     uint16_t port;
-//     const SocketOperations *ops;
-// } HTTP_Server;
-
 typedef struct HTTP_Server HTTP_Server;
 
-/* Constructor */
 HTTP_Server* init_server(uint16_t port, const SocketOperations *ops);
-
-/* Accessors */
-socket_handle http_server_get_socket(HTTP_Server *server);
-const SocketOperations* http_server_get_ops(HTTP_Server *server);
+void http_server_run(HTTP_Server *server);
 
 #endif // HTTP_SERVER_H
