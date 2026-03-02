@@ -7,6 +7,7 @@ struct HTTP_Server
     socket_handle socket;
     uint16_t port;
     const SocketOperations *ops;
+    int running;
 };
 
 HTTP_Server * init_server(uint16_t port, const SocketOperations *ops) 
@@ -24,6 +25,7 @@ HTTP_Server * init_server(uint16_t port, const SocketOperations *ops)
 
     server->ops = ops;
     server->port = port;
+    server->running = 1;
 
     server->socket = ops->socket_create();
     if (server->socket == 0) {
@@ -46,7 +48,7 @@ void http_server_run(HTTP_Server *server)
 
     const SocketOperations *ops = server->ops;
 
-    while (1)
+    while (server->running)
     {
         socket_handle client = ops->socket_accept(server->socket);
         if (client == 0)
@@ -76,12 +78,31 @@ void http_server_run(HTTP_Server *server)
 
             ops->socket_send(client, msg, strlen(msg));
             ops->socket_close(client);
-            break;
+
+            http_server_stop(server);
+            continue;
         }
 
         ops->socket_close(client);
     }
 
+    if (server->socket) {
+        ops->socket_close(server->socket);
+    }
+
     ops->cleanup();
     free(server);
+}
+
+void http_server_stop(HTTP_Server *server)
+{
+    if (!server) return;
+
+    server->running = 0;
+
+    if (server->ops && server->socket)
+    {
+        server->ops->socket_close(server->socket);
+        server->socket = 0;
+    }
 }

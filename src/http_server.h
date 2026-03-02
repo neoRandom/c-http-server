@@ -25,5 +25,6 @@ typedef struct HTTP_Server HTTP_Server;
 
 HTTP_Server* init_server(uint16_t port, const SocketOperations *ops);
 void http_server_run(HTTP_Server *server);
+void http_server_stop(HTTP_Server *server);
 
 #endif // HTTP_SERVER_H
